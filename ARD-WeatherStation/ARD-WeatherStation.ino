@@ -10,13 +10,36 @@ LiquidCrystal_I2C lcd(0x3f, 16, 2);
 DHT dht(DHTPIN, DHTTYPE);
 
 
+byte thermo[8] = {
+  B00100,
+  B01010,
+  B01010,
+  B01110,
+  B01110,
+  B11111,
+  B11111,
+  B01110
+};
+
+byte water[8] = {
+  B00100,
+  B00100,
+  B01010,
+  B01010,
+  B10001,
+  B10001,
+  B10001,
+  B01110,
+};
+
 void setup() {
   Serial.begin(9600);
   Serial.println("begin");
   dht.begin();
   lcd.begin();
-
   lcd.backlight();
+  lcd.createChar(1, thermo);
+  lcd.createChar(2, water);
 
   lcd.home();
   lcd.print(" Weather Station");
@@ -52,14 +75,17 @@ void loop() {
   Serial.println(" *C ");
 
   lcd.setCursor(0, 0);
-  lcd.print("T: ");
+  lcd.print("  ");
+  lcd.write(1);
+  lcd.print(":");
   lcd.print(t);
-  lcd.print("C  ");
-  lcd.print("H: ");
+  lcd.print("C ");
+  lcd.write(2);
+  lcd.print(":");
   lcd.print(h);
-  lcd.print("%RH  ");
+  lcd.print("%RH   ");
   lcd.setCursor(0, 1);
-  lcd.print("Wind: ");
-  lcd.print("m/s  ");
+  lcd.print("  Wind: ");
+  lcd.print("m/s   ");
   delay(1000);
 }
