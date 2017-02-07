@@ -1,13 +1,46 @@
-#include "DHT.h"
+/*
+ * Weather Station by IVEN1
+ * 
+   The LCD1602_I2C circuit :
+   VCC  -  +5 V
+   GND  -  Ground
+   SDA  -  A4
+   SCL  -  A5
+
+   SD card SPI bus :
+   MOSI - pin 11
+   MISO - pin 12
+   CLK - pin 13
+   CS - pin 4 or 10
+
+   RTC DS1307 :
+   VCC  -  +5 V
+   GND  -  Ground
+   SDA  -  pin A4
+   SCL  -  pin A5
+*/
+
+#include <SPI.h>
+#include <SD.h>
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
+#include "DHT.h"
+#include "RTClib.h"
 
 LiquidCrystal_I2C lcd(0x3f, 16, 2);
 
+#define CS    10
+#define MOSI  11
+#define MISO  12
+#define CLK   13
 #define wind A0
 #define DHTPIN 2
 #define DHTTYPE DHT22
+#define OUTPUT_FILE  "Datalog.csv"
+
 DHT dht(DHTPIN, DHTTYPE);
+RTC_DS1307 rtc;
+File wsFile;
 
 unsigned long previousMillis = 0;
 const long interval = 1000;
@@ -46,11 +79,30 @@ byte Cloud[8] = {
   B11111
 };
 
+void first_save() {
+  wsFile = SD.open(OUTPUT_FILE, FILE_WRITE);
+  if (wsFile) {
+    wsFile.println("Weather Station by IVEN1");
+    wsFile.print("Date");
+    wsFile.print(",");
+    wsFile.print("Time");
+    wsFile.print(",");
+    wsFile.print("Temperature");
+    wsFile.print(",");
+    wsFile.print("Humidity");
+    wsFile.print(",");
+    wsFile.println("Wind Speed");
+    wsFile.close();
+  }
+}
+
 void setup() {
   Serial.begin(9600);
-  Serial.println("begin");
+  Serial.println("Initial");
+  SD.begin(CS);
   dht.begin();
   lcd.begin();
+
   lcd.backlight();
   lcd.createChar(1, thermo);
   lcd.createChar(2, water);
@@ -60,11 +112,13 @@ void setup() {
   lcd.setCursor(0, 1);
   lcd.print("     IVEN1      ");
   delay(1000);
-
   lcd.noBacklight();
   delay(1000);
-
   lcd.backlight();
+  delay(1000);
+  
+  first_save();
+  Serial.println("done...");
 }
 
 void loop() {
